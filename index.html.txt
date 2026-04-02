@@ -1,0 +1,824 @@
+Main Application (src/App.tsx)
+This file contains the entire UI structure, including the Hero, About, Products, Services, Reviews, Support, and Login sections.
+code
+Tsx
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Menu, X, Layout as WindowIcon, Phone, Mail, MapPin, 
+  ChevronRight, Star, Shield, Wrench as Tool, Truck, Headphones,
+  LogIn, User, Lock, ArrowRight, LogOut, CheckCircle2, AlertCircle
+} from 'lucide-react';
+import { cn } from './lib/utils';
+import { supabase } from './lib/supabase';
+
+// --- Components ---
+
+const Navbar = ({ onLoginClick, user, onLogout }: { onLoginClick: () => void, user: any, onLogout: () => void }) => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navLinks = [
+    { name: 'Home', href: '#' },
+    { name: 'About', href: '#about' },
+    { name: 'Products', href: '#products' },
+    { name: 'Services', href: '#services' },
+    { name: 'Reviews', href: '#reviews' },
+    { name: 'Support', href: '#support' },
+  ];
+
+  return (
+    <nav className={cn(
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6 py-4",
+      isScrolled ? "bg-black/80 backdrop-blur-md border-b border-white/10" : "bg-transparent"
+    )}>
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <WindowIcon className="w-8 h-8 text-accent" />
+          <span className="text-xl font-bold tracking-tight text-white">The Window Factory</span>
+        </div>
+
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <a 
+              key={link.name} 
+              href={link.href}
+              className="text-sm font-medium text-slate-300 hover:text-accent transition-colors"
+            >
+              {link.name}
+            </a>
+          ))}
+          {user ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-slate-400 font-medium">{user.email}</span>
+              <button 
+                onClick={onLogout}
+                className="flex items-center gap-2 bg-white/10 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-white/20 transition-all active:scale-95"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={onLoginClick}
+              className="flex items-center gap-2 bg-accent text-black px-5 py-2 rounded-full text-sm font-bold hover:bg-gold-light transition-all active:scale-95"
+            >
+              <LogIn className="w-4 h-4" />
+              Login
+            </button>
+          )}
+        </div>
+
+        {/* Mobile Toggle */}
+        <button 
+          className="md:hidden p-2 text-white"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X /> : <Menu />}
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-full left-0 right-0 bg-black border-t border-white/10 p-6 shadow-xl md:hidden"
+          >
+            <div className="flex flex-col gap-4">
+              {navLinks.map((link) => (
+                <a 
+                  key={link.name} 
+                  href={link.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-lg font-medium text-white"
+                >
+                  {link.name}
+                </a>
+              ))}
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onLoginClick();
+                }}
+                className="flex items-center justify-center gap-2 bg-accent text-black px-5 py-3 rounded-xl text-sm font-bold"
+              >
+                <LogIn className="w-4 h-4" />
+                Login
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
+};
+
+const Hero = () => (
+  <section className="relative h-screen flex items-center justify-center overflow-hidden pt-20">
+    <div className="absolute inset-0 z-0">
+      <img 
+        src="https://images.unsplash.com/photo-1505691938895-1758d7eaa511?auto=format&fit=crop&q=80&w=2000" 
+        alt="Modern Home with Windows" 
+        className="w-full h-full object-cover brightness-50"
+        referrerPolicy="no-referrer"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black"></div>
+    </div>
+    <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <span className="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-widest text-accent uppercase bg-accent/10 rounded-full border border-accent/20">
+          Crafting Excellence Since 1995
+        </span>
+        <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+          Windows That Frame <br /> Your <span className="text-accent">Perfect Life</span>
+        </h1>
+        <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+          Experience the perfect blend of durability, energy efficiency, and aesthetic elegance with our custom-manufactured window solutions.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button className="w-full sm:w-auto bg-accent text-black px-8 py-4 rounded-full font-bold text-lg hover:bg-gold-light transition-all shadow-lg shadow-accent/20 active:scale-95">
+            Explore Products
+          </button>
+          <button className="w-full sm:w-auto bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition-all active:scale-95">
+            Get a Free Quote
+          </button>
+        </div>
+      </motion.div>
+    </div>
+    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce">
+      <div className="w-6 h-10 border-2 border-accent/30 rounded-full flex justify-center p-1">
+        <div className="w-1.5 h-1.5 bg-accent rounded-full"></div>
+      </div>
+    </div>
+  </section>
+);
+
+const About = () => (
+  <section id="about" className="py-24 bg-black px-6">
+    <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+      <motion.div
+        initial={{ opacity: 0, x: -50 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+      >
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+          Our Legacy of Quality <br /> & Craftsmanship
+        </h2>
+        <p className="text-slate-400 mb-6 leading-relaxed">
+          At The Window Factory, we don't just make windows; we create architectural elements that define the character of your space. With over 25 years of experience, our team of expert craftsmen uses the finest materials to ensure every window is a masterpiece of engineering.
+        </p>
+        <p className="text-slate-400 mb-8 leading-relaxed">
+          We pride ourselves on our sustainable manufacturing processes and our commitment to energy efficiency, helping you reduce your carbon footprint while enhancing your home's beauty.
+        </p>
+        <div className="grid grid-cols-2 gap-8">
+          <div>
+            <h4 className="text-3xl font-bold text-accent mb-1">25+</h4>
+            <p className="text-sm text-slate-500 font-medium uppercase tracking-wider">Years Experience</p>
+          </div>
+          <div>
+            <h4 className="text-3xl font-bold text-accent mb-1">50k+</h4>
+            <p className="text-sm text-slate-500 font-medium uppercase tracking-wider">Windows Installed</p>
+          </div>
+        </div>
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="relative"
+      >
+        <div className="absolute inset-0 border-2 border-accent/20 translate-x-4 translate-y-4 rounded-3xl"></div>
+        <img 
+          src="https://images.unsplash.com/photo-1513584684374-8bdb74838a0f?auto=format&fit=crop&q=80&w=1000" 
+          alt="Window Factory Workshop" 
+          className="relative z-10 rounded-3xl shadow-2xl grayscale hover:grayscale-0 transition-all duration-700"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute -bottom-6 -left-6 bg-accent text-black p-8 rounded-2xl hidden lg:block shadow-xl z-20">
+          <p className="text-2xl font-black italic tracking-tight">"Quality you can see through."</p>
+        </div>
+      </motion.div>
+    </div>
+  </section>
+);
+
+const Products = () => {
+  const products = [
+    {
+      title: "Casement Windows",
+      desc: "Classic side-hinged design for maximum ventilation and clear views.",
+      image: "https://images.unsplash.com/photo-1591115765373-520b7a21769b?auto=format&fit=crop&q=80&w=600",
+      price: "From $299"
+    },
+    {
+      title: "Sliding Windows",
+      desc: "Modern, space-saving design that glides horizontally with ease.",
+      image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&q=80&w=600",
+      price: "From $349"
+    },
+    {
+      title: "Bay & Bow Windows",
+      desc: "Elegant multi-pane windows that project outward to create extra space.",
+      image: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&q=80&w=600",
+      price: "From $899"
+    },
+    {
+      title: "Awning Windows",
+      desc: "Top-hinged windows perfect for ventilation even during light rain.",
+      image: "https://images.unsplash.com/photo-1503708928676-1cb796a0891e?auto=format&fit=crop&q=80&w=600",
+      price: "From $279"
+    }
+  ];
+
+  return (
+    <section id="products" className="py-24 bg-slate-950 px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">Our Premium Window Types</h2>
+          <p className="text-slate-400 max-w-2xl mx-auto">Explore our wide range of styles designed to fit any architectural aesthetic and functional requirement.</p>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {products.map((product, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 }}
+              className="bg-black border border-white/5 rounded-2xl overflow-hidden shadow-sm hover:shadow-accent/10 hover:border-accent/30 transition-all group"
+            >
+              <div className="h-48 overflow-hidden">
+                <img 
+                  src={product.image} 
+                  alt={product.title} 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75 group-hover:brightness-100"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-white mb-2">{product.title}</h3>
+                <p className="text-sm text-slate-400 mb-4 line-clamp-2">{product.desc}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-accent font-bold">{product.price}</span>
+                  <button className="text-white hover:text-accent transition-colors">
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Services = () => {
+  const services = [
+    {
+      icon: <Tool className="w-8 h-8" />,
+      title: "Custom Fabrication",
+      desc: "We manufacture windows to your exact specifications and dimensions."
+    },
+    {
+      icon: <Truck className="w-8 h-8" />,
+      title: "Expert Installation",
+      desc: "Our certified team ensures a perfect, air-tight fit every single time."
+    },
+    {
+      icon: <Shield className="w-8 h-8" />,
+      title: "Lifetime Warranty",
+      desc: "We stand behind our work with comprehensive long-term guarantees."
+    },
+    {
+      icon: <Headphones className="w-8 h-8" />,
+      title: "Customer Support",
+      desc: "Dedicated support team available for all your maintenance needs."
+    }
+  ];
+
+  return (
+    <section id="services" className="py-24 bg-black px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
+          {services.map((service, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 }}
+              className="text-center"
+            >
+              <div className="w-16 h-16 bg-accent/10 text-accent rounded-2xl flex items-center justify-center mx-auto mb-6 border border-accent/20">
+                {service.icon}
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">{service.title}</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">{service.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Reviews = () => {
+  const reviews = [
+    {
+      name: "Sarah Johnson",
+      role: "Homeowner",
+      text: "The quality of the windows is outstanding. Our energy bills dropped by 30% in the first month!",
+      rating: 5
+    },
+    {
+      name: "Michael Chen",
+      role: "Architect",
+      text: "As an architect, I'm very picky about details. The Window Factory exceeded all my expectations.",
+      rating: 5
+    },
+    {
+      name: "Emily Davis",
+      role: "Interior Designer",
+      text: "Beautiful designs and seamless installation. They are my go-to for all my design projects.",
+      rating: 4
+    }
+  ];
+
+  return (
+    <section id="reviews" className="py-24 bg-slate-950 text-white px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">What Our Clients Say</h2>
+          <div className="flex justify-center gap-1">
+            {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-accent text-accent" />)}
+          </div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-8">
+          {reviews.map((review, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="bg-black border border-white/10 p-8 rounded-3xl backdrop-blur-sm hover:border-accent/30 transition-all"
+            >
+              <p className="text-lg italic text-slate-400 mb-6 leading-relaxed">"{review.text}"</p>
+              <div>
+                <h4 className="font-bold text-white">{review.name}</h4>
+                <p className="text-sm text-accent uppercase tracking-widest font-medium mt-1">{review.role}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Support = () => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    message: ''
+  });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+    setErrorMessage('');
+
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .insert([
+          { 
+            first_name: formData.firstName, 
+            last_name: formData.lastName, 
+            email: formData.email, 
+            message: formData.message 
+          }
+        ]);
+
+      if (error) throw error;
+      
+      setStatus('success');
+      setFormData({ firstName: '', lastName: '', email: '', message: '' });
+      setTimeout(() => setStatus('idle'), 5000);
+    } catch (err: any) {
+      console.error('Submission error:', err);
+      setStatus('error');
+      setErrorMessage(err.message || 'Failed to send message. Please try again.');
+    }
+  };
+
+  return (
+    <section id="support" className="py-24 bg-black px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-accent rounded-[3rem] p-12 md:p-20 text-black overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-black/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+          <div className="relative z-10 grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tight">Need Expert Advice?</h2>
+              <p className="text-black/70 text-lg mb-10 font-medium">Our customer care team is here to help you choose the perfect windows for your home. Reach out for support or a free consultation.</p>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-black/10 rounded-xl flex items-center justify-center">
+                    <Phone className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-black/60 font-bold uppercase tracking-wider">Call Us Anytime</p>
+                    <p className="text-xl font-black">1-800-WINDOW-F</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-black/10 rounded-xl flex items-center justify-center">
+                    <Mail className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-black/60 font-bold uppercase tracking-wider">Email Support</p>
+                    <p className="text-xl font-black">help@windowfactory.com</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-black rounded-3xl p-8 text-white shadow-2xl border border-white/5">
+              <h3 className="text-2xl font-bold mb-6 text-accent">Send a Message</h3>
+              
+              {status === 'success' ? (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center justify-center py-12 text-center"
+                >
+                  <CheckCircle2 className="w-16 h-16 text-accent mb-4" />
+                  <h4 className="text-xl font-bold mb-2">Message Sent!</h4>
+                  <p className="text-slate-400">We'll get back to you as soon as possible.</p>
+                  <button 
+                    onClick={() => setStatus('idle')}
+                    className="mt-6 text-accent font-bold hover:underline"
+                  >
+                    Send another message
+                  </button>
+                </motion.div>
+              ) : (
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input 
+                      type="text" 
+                      placeholder="First Name" 
+                      required
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-accent transition-all placeholder:text-slate-600" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Last Name" 
+                      required
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-accent transition-all placeholder:text-slate-600" 
+                    />
+                  </div>
+                  <input 
+                    type="email" 
+                    placeholder="Email Address" 
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-accent transition-all placeholder:text-slate-600" 
+                  />
+                  <textarea 
+                    placeholder="How can we help?" 
+                    rows={4} 
+                    required
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-accent transition-all placeholder:text-slate-600"
+                  ></textarea>
+                  
+                  {status === 'error' && (
+                    <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 p-3 rounded-xl border border-red-400/20">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <p>{errorMessage}</p>
+                    </div>
+                  )}
+
+                  <button 
+                    disabled={status === 'loading'}
+                    className="w-full bg-accent text-black py-4 rounded-xl font-black hover:bg-gold-light transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {status === 'loading' ? 'Sending...' : 'Send Message'}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Footer = () => (
+  <footer className="bg-black pt-20 pb-10 px-6 border-t border-white/10">
+    <div className="max-w-7xl mx-auto">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div>
+          <div className="flex items-center gap-2 mb-6">
+            <WindowIcon className="w-8 h-8 text-accent" />
+            <span className="text-xl font-bold tracking-tight text-white">The Window Factory</span>
+          </div>
+          <p className="text-slate-500 text-sm leading-relaxed mb-6">
+            Leading the industry in window innovation and energy efficiency. We bring light and comfort to your world.
+          </p>
+        </div>
+        <div>
+          <h4 className="font-bold text-white mb-6 uppercase tracking-widest text-xs">Quick Links</h4>
+          <ul className="space-y-4 text-sm text-slate-500">
+            <li><a href="#" className="hover:text-accent transition-colors">Home</a></li>
+            <li><a href="#about" className="hover:text-accent transition-colors">About Us</a></li>
+            <li><a href="#products" className="hover:text-accent transition-colors">Products</a></li>
+            <li><a href="#services" className="hover:text-accent transition-colors">Services</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold text-white mb-6 uppercase tracking-widest text-xs">Support</h4>
+          <ul className="space-y-4 text-sm text-slate-500">
+            <li><a href="#support" className="hover:text-accent transition-colors">Customer Care</a></li>
+            <li><a href="#support" className="hover:text-accent transition-colors">Support Center</a></li>
+            <li><a href="#" className="hover:text-accent transition-colors">Warranty Info</a></li>
+            <li><a href="#" className="hover:text-accent transition-colors">Privacy Policy</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold text-white mb-6 uppercase tracking-widest text-xs">Contact Us</h4>
+          <ul className="space-y-4 text-sm text-slate-500">
+            <li className="flex items-start gap-3">
+              <MapPin className="w-5 h-5 text-accent shrink-0" />
+              <span>123 Industrial Way, <br /> Glass City, GC 54321</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <Phone className="w-5 h-5 text-accent shrink-0" />
+              <span>+1 (555) 000-1234</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <Mail className="w-5 h-5 text-accent shrink-0" />
+              <span>info@windowfactory.com</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div className="pt-8 border-t border-white/5 text-center text-xs text-slate-600 uppercase tracking-widest">
+        <p>© 2026 The Window Factory. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+);
+
+const LoginModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      if (mode === 'login') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        alert('Check your email for the confirmation link!');
+      }
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative bg-black w-full max-w-md rounded-[2rem] p-10 shadow-2xl overflow-hidden border border-white/10"
+          >
+            <button 
+              onClick={onClose}
+              className="absolute top-6 right-6 p-2 text-slate-500 hover:text-white transition-colors"
+            >
+              <X />
+            </button>
+            
+            <div className="text-center mb-10">
+              <div className="w-16 h-16 bg-accent/10 text-accent rounded-2xl flex items-center justify-center mx-auto mb-4 border border-accent/20">
+                <User className="w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">{mode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
+              <p className="text-slate-500">{mode === 'login' ? 'Login to your factory account' : 'Join The Window Factory'}</p>
+            </div>
+
+            <form className="space-y-6" onSubmit={handleAuth}>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 ml-1 uppercase tracking-widest">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <input 
+                    type="email" 
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@company.com" 
+                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-accent transition-all text-white placeholder:text-slate-600"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 ml-1 uppercase tracking-widest">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <input 
+                    type="password" 
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••" 
+                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-accent transition-all text-white placeholder:text-slate-600"
+                  />
+                </div>
+              </div>
+              
+              {error && (
+                <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 p-3 rounded-xl border border-red-400/20">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <p>{error}</p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 rounded border-white/10 bg-white/5 text-accent focus:ring-accent" />
+                  <span className="text-slate-500">Remember me</span>
+                </label>
+                <a href="#" className="text-accent font-bold hover:underline">Forgot password?</a>
+              </div>
+              <button 
+                disabled={loading}
+                className="w-full bg-accent text-black py-4 rounded-2xl font-black hover:bg-gold-light transition-all flex items-center justify-center gap-2 group uppercase tracking-widest disabled:opacity-50"
+              >
+                {loading ? 'Processing...' : mode === 'login' ? 'Sign In' : 'Sign Up'}
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </form>
+
+            <div className="mt-8 text-center text-sm text-slate-500">
+              {mode === 'login' ? (
+                <>Don't have an account? <button onClick={() => setMode('signup')} className="text-accent font-bold hover:underline">Sign Up</button></>
+              ) : (
+                <>Already have an account? <button onClick={() => setMode('login')} className="text-accent font-bold hover:underline">Login</button></>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// --- Main App ---
+
+export default function App() {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Check active sessions and subscribe to auth changes
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  return (
+    <div className="min-h-screen font-sans selection:bg-accent/30 selection:text-accent">
+      <Navbar 
+        onLoginClick={() => setIsLoginOpen(true)} 
+        user={user}
+        onLogout={handleLogout}
+      />
+      
+      <main>
+        <Hero />
+        <About />
+        <Services />
+        <Products />
+        <Reviews />
+        <Support />
+      </main>
+
+      <Footer />
+      
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+    </div>
+  );
+}
+2. Global Styles & Theme (src/index.css)
+code
+CSS
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #000000;
+  --color-accent: #d4af37; /* Golden color */
+  --color-gold-light: #f9e29d;
+  --color-gold-dark: #b8860b;
+}
+
+@layer base {
+  body {
+    @apply bg-black text-white;
+  }
+}
+3. Supabase Configuration (src/lib/supabase.ts)
+code
+TypeScript
+import { createClient } from '@supabase/supabase-js';
+
+// Using provided credentials directly to ensure connection works in preview
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://spcholnltutdunfaxqpm.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_2Rku_Rqa_ilXrCEbLMoiBg_7hs-SKT-';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+4. Utility Functions (src/lib/utils.ts)
+code
+TypeScript
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+5. TypeScript Environment Definitions (src/vite-env.d.ts)
+code
+TypeScript
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_SUPABASE_URL: string
+  readonly VITE_SUPABASE_ANON_KEY: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
+lightbulb_tips
